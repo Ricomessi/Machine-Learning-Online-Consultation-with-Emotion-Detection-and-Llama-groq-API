@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Emotion Detection</title>
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      #result {
+        white-space: pre-wrap; /* To display JSON nicely */
+      }
+      .video-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      }
+      video {
+        width: 100%;
+        height: auto;
+      }
+      .emotion-counts {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        margin-top: 20px;
+      }
+      .btn-primary {
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <div class="container">
+      <h1 class="text-center mt-4">Emotion Detection</h1>
+      <div class="video-container">
+        <img src="{{ url_for('video_feed') }}" class="img-fluid" />
+      </div>
+      <button id="recordButton" class="btn btn-primary btn-lg btn-block">
+        Rekam Audio
+      </button>
+      <h2>Emotion Counts:</h2>
+      <div id="emotionCounts" class="emotion-counts"></div>
+      <h2>Dominant Emotion:</h2>
+      <div id="dominantEmotion" class="emotion-counts"></div>
+      <div id="result" class="emotion-counts mt-3"></div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      document.getElementById("recordButton").onclick = function () {
+        fetch("/process_audio", {
+          method: "POST",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              document.getElementById("result").textContent =
+                "Error: " + data.error;
+            } else {
+              document.getElementById(
+                "result"
+              ).textContent = `Recognized Speech: ${data.request}\nResponse: ${data.response}`;
+
+              // Display the emotion counts
+              const emotionCountsDiv = document.getElementById("emotionCounts");
+              emotionCountsDiv.innerHTML = "";
+              for (const [emotion, count] of Object.entries(
+                data.emotion_counts
+              )) {
+                emotionCountsDiv.innerHTML += `${emotion}: ${count}<br>`;
+              }
+
+              // Display the dominant emotion
+              document.getElementById("dominantEmotion").textContent =
+                data.dominant_emotion
+                  ? `Most Frequent Emotion: ${data.dominant_emotion}`
+                  : "No emotions detected.";
+            }
+          })
+          .catch((error) => {
+            document.getElementById("result").textContent = "Error: " + error;
+          });
+      };
+    </script>
+  </body>
+</html>
